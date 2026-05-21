@@ -5,7 +5,7 @@ export default function HomePage() {
     <main className="app-shell">
       <section className="hero">
         <p className="eyebrow">Orangetheory</p>
-        <h1>Today's Workout</h1>
+        <h1>Today&apos;s Workout</h1>
         <p className="hero-copy">Your cleaned daily workout will appear here.</p>
       </section>
     </main>
