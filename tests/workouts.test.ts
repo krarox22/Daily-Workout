@@ -105,8 +105,75 @@ describe("workout store", () => {
       db.close();
     }
   });
+
+  it.each([
+    ["invalid JSON", "not json"],
+    ["non-section array", JSON.stringify([{ heading: "Tread Block", body: 123 }])]
+  ])("falls back to the sample workout when old schema contains %s sections_json", (_label, sectionsJson) => {
+    insertLaxWorkoutRow({ sectionsJson });
+    store = createTestStore();
+
+    expect(store.getCurrentWorkout()).toEqual(sampleWorkout);
+  });
+
+  it.each([
+    ["parserMode", "mystery"],
+    ["lastRefreshStatus", "pending"],
+    ["completed", 2]
+  ])("falls back to the sample workout when old schema contains invalid %s", (field, value) => {
+    insertLaxWorkoutRow({ [field]: value });
+    store = createTestStore();
+
+    expect(store.getCurrentWorkout()).toEqual(sampleWorkout);
+  });
 });
 
 function createTestStore(): TestWorkoutStore {
   return createWorkoutStore(dbPath) as TestWorkoutStore;
+}
+
+function insertLaxWorkoutRow(overrides: Record<string, unknown>) {
+  const db = new Database(dbPath);
+
+  try {
+    db.exec(`
+      CREATE TABLE current_workout (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        display_date TEXT,
+        raw_text TEXT NOT NULL,
+        sections_json TEXT NOT NULL,
+        parser_mode TEXT NOT NULL,
+        reddit_id TEXT,
+        reddit_title TEXT,
+        reddit_created_at TEXT,
+        fetched_at TEXT,
+        last_refresh_status TEXT NOT NULL,
+        completed INTEGER NOT NULL
+      )
+    `);
+
+    const workout = {
+      ...sampleWorkout,
+      rawText: "Persisted corrupt workout",
+      sectionsJson: JSON.stringify(sampleWorkout.sections),
+      completed: 0,
+      ...overrides
+    };
+
+    db.prepare(`
+      INSERT INTO current_workout (
+        id, title, display_date, raw_text, sections_json, parser_mode,
+        reddit_id, reddit_title, reddit_created_at, fetched_at,
+        last_refresh_status, completed
+      )
+      VALUES (
+        @id, @title, @displayDate, @rawText, @sectionsJson, @parserMode,
+        @redditId, @redditTitle, @redditCreatedAt, @fetchedAt,
+        @lastRefreshStatus, @completed
+      )
+    `).run(workout);
+  } finally {
+    db.close();
+  }
 }
