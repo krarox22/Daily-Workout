@@ -1,13 +1,15 @@
+import { WorkoutApp } from "@/components/workout-app";
+import { createWorkoutService } from "@/lib/workouts";
+
 export const dynamic = "force-dynamic";
 
 export default function HomePage() {
-  return (
-    <main className="app-shell">
-      <section className="hero">
-        <p className="eyebrow">Orangetheory</p>
-        <h1>Today&apos;s Workout</h1>
-        <p className="hero-copy">Your cleaned daily workout will appear here.</p>
-      </section>
-    </main>
-  );
+  const service = createWorkoutService();
+
+  try {
+    const workout = service.getCurrentWorkout();
+    return <WorkoutApp initialWorkout={workout} />;
+  } finally {
+    service.close();
+  }
 }
