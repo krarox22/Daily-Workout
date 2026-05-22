@@ -6,24 +6,35 @@ type ParseInput = {
 };
 
 const SECTION_HEADING_RE =
-  /^(tread|row|floor|lift|finisher|notes?|coach notes?|block|tread block|row block|floor block|lift block)(\b.*)?$/i;
+  /^(?:(?:tread|row|floor|lift|finisher)(?:\s+(?:block(?:\s+\d+)?|\d+))?|notes|coach notes)$/i;
 
 export function isDailyWorkoutTitle(title: string, keyword: string): boolean {
   return title.toLowerCase().includes(keyword.toLowerCase());
 }
 
 export function extractDisplayDate(title: string): string | null {
-  const match = title.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/);
+  const match = title.match(/\b(\d{1,2})\/(\d{1,2})(?:\/(\d{2}|\d{4}))?\b/);
   if (!match) return null;
 
   const month = Number(match[1]);
   const day = Number(match[2]);
-  if (!Number.isInteger(month) || !Number.isInteger(day) || month < 1 || month > 12 || day < 1 || day > 31) {
+  const year = match[3] ? normalizeYear(match[3]) : 2026;
+  if (year === null || !Number.isInteger(month) || !Number.isInteger(day)) {
     return null;
   }
 
-  const date = new Date(Date.UTC(2026, month - 1, day));
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    return null;
+  }
+
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(date);
+}
+
+function normalizeYear(yearText: string): number | null {
+  if (yearText.length === 2) return 2000 + Number(yearText);
+  if (yearText.length === 4) return Number(yearText);
+  return null;
 }
 
 export function cleanRedditText(text: string): string {
