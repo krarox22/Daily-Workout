@@ -187,6 +187,50 @@ describe("workout service", () => {
     expect(result.workout.displayDate).toBe("May 22");
   });
 
+  it("preserves completion when refreshing the same Reddit post", async () => {
+    store = createTestStore();
+    store.saveCurrentWorkout({ ...sampleWorkout, redditId: "abc123", completed: true });
+    const service = createWorkoutService({
+      store,
+      fetchPosts: async () => [
+        {
+          id: "abc123",
+          title: "Daily Workout and General Chat for Friday 05/22/26",
+          selftext: "Tread Block\n2 min push\n\nFloor Block\n10 squats",
+          createdUtc: 1779400000
+        }
+      ]
+    });
+
+    const result = await service.refreshWorkout();
+
+    expect(result.ok).toBe(true);
+    expect(result.workout.redditId).toBe("abc123");
+    expect(result.workout.completed).toBe(true);
+  });
+
+  it("resets completion when refreshing a different Reddit post", async () => {
+    store = createTestStore();
+    store.saveCurrentWorkout({ ...sampleWorkout, redditId: "old123", completed: true });
+    const service = createWorkoutService({
+      store,
+      fetchPosts: async () => [
+        {
+          id: "new123",
+          title: "Daily Workout and General Chat for Friday 05/22/26",
+          selftext: "Tread Block\n2 min push\n\nFloor Block\n10 squats",
+          createdUtc: 1779400000
+        }
+      ]
+    });
+
+    const result = await service.refreshWorkout();
+
+    expect(result.ok).toBe(true);
+    expect(result.workout.redditId).toBe("new123");
+    expect(result.workout.completed).toBe(false);
+  });
+
   it("preserves saved workout when no matching post exists", async () => {
     store = createTestStore();
     store.saveCurrentWorkout({ ...sampleWorkout, rawText: "Keep me" });

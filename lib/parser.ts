@@ -80,9 +80,11 @@ function parseSections(rawText: string): WorkoutSection[] {
       continue;
     }
 
-    if (current) {
-      current.body += `${line}\n`;
+    if (!current) {
+      return [];
     }
+
+    current.body += `${line}\n`;
   }
 
   if (current && current.body.trim()) {

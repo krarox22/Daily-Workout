@@ -80,4 +80,25 @@ describe("parser", () => {
     expect(parsed.sections).toEqual([]);
     expect(parsed.rawText).toContain("AO where coached");
   });
+
+  it("falls back to raw mode when content appears before the first section heading", () => {
+    const parsed = parseWorkout({
+      title: "Daily Workout - 5/22/2026",
+      selftext: [
+        "Coach note: templates are approximate today",
+        "",
+        "Tread Block",
+        "2 min push",
+        "",
+        "Floor Block",
+        "10 squats"
+      ].join("\n")
+    });
+
+    expect(parsed.parserMode).toBe("raw");
+    expect(parsed.sections).toEqual([]);
+    expect(parsed.rawText).toContain("Coach note: templates are approximate today");
+    expect(parsed.rawText).toContain("Tread Block");
+    expect(parsed.rawText).toContain("Floor Block");
+  });
 });

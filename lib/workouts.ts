@@ -42,6 +42,7 @@ export function createWorkoutService(deps: ServiceDeps = {}) {
           return { ok: false, workout, message: "No Daily Workout post found" };
         }
 
+        const current = store.getCurrentWorkout();
         const parsed = parseWorkout({ title: post.title, selftext: post.selftext });
         const workout = store.saveCurrentWorkout({
           id: "current",
@@ -51,7 +52,7 @@ export function createWorkoutService(deps: ServiceDeps = {}) {
           redditCreatedAt: new Date(post.createdUtc * 1000).toISOString(),
           fetchedAt: new Date().toISOString(),
           lastRefreshStatus: "success",
-          completed: false
+          completed: current.redditId === post.id ? current.completed : false
         });
 
         return { ok: true, workout, message: "Workout refreshed" };
