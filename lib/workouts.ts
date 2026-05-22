@@ -108,7 +108,7 @@ export function createWorkoutService(deps: ServiceDeps = {}) {
                   parsed = linkedParsed;
                 }
               }
-            } catch (err) {
+            } catch {
               // Ignore link-following failure and fallback to the original raw workout text
             }
           }

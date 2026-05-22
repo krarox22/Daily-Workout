@@ -26,6 +26,7 @@ const isVercel = typeof process !== "undefined" && process.env && process.env.VE
 let inMemoryWorkout: Workout = sampleWorkout;
 
 export function createWorkoutStore(dbPath = appConfig.sqlitePath) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let db: any = null;
 
   if (!isVercel) {
@@ -160,8 +161,7 @@ function rowToWorkout(row: WorkoutRow): Workout {
     redditTitle: row.reddit_title,
     redditCreatedAt: row.reddit_created_at,
     fetchedAt: row.fetched_at,
-    last_refresh_status: row.last_refresh_status as any,
-    lastRefreshStatus: row.last_refresh_status as any,
+    lastRefreshStatus: row.last_refresh_status as Workout["lastRefreshStatus"],
     completed: row.completed === 1
   };
 }

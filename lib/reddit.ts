@@ -32,6 +32,81 @@ async function getRedditAccessToken(): Promise<string | null> {
   }
 }
 
+function htmlToPlaintext(html: string): string {
+  if (!html) return "";
+  let text = html;
+
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  text = text.replace(/<\/p>/gi, "\n");
+  text = text.replace(/<\/h[1-6]>/gi, "\n");
+  text = text.replace(/<\/div>/gi, "\n");
+  text = text.replace(/<\/li>/gi, "\n");
+  text = text.replace(/<li>/gi, "* ");
+
+  text = text.replace(/<[^>]*>/g, "");
+
+  text = text.replace(/&amp;/g, "&")
+             .replace(/&lt;/g, "<")
+             .replace(/&gt;/g, ">")
+             .replace(/&quot;/g, '"')
+             .replace(/&#39;/g, "'")
+             .replace(/&nbsp;/g, " ");
+
+  return text.trim();
+}
+
+interface RssItem {
+  guid?: string;
+  link?: string;
+  pubDate?: string;
+  description?: string;
+  content?: string;
+  title?: string;
+  author?: string;
+}
+
+interface RssFeedData {
+  items?: RssItem[];
+}
+
+function mapRssPosts(rssData: RssFeedData): RedditPost[] {
+  if (!rssData || !Array.isArray(rssData.items)) return [];
+  return rssData.items.map((item: RssItem) => {
+    const id = item.guid ? item.guid.replace(/^t3_/, "") : "";
+    const linkMatch = item.link ? item.link.match(/\/comments\/([a-z0-9]{5,10})/) : null;
+    const finalId = id || (linkMatch ? linkMatch[1] : "");
+
+    const createdUtc = item.pubDate ? Math.floor(new Date(item.pubDate).getTime() / 1000) : Math.floor(Date.now() / 1000);
+    const cleanText = item.description
+      ? htmlToPlaintext(item.description)
+      : "";
+
+    return {
+      id: finalId,
+      title: item.title || "",
+      selftext: cleanText,
+      createdUtc
+    };
+  });
+}
+
+function mapRssComments(rssData: RssFeedData): RedditComment[] {
+  if (!rssData || !Array.isArray(rssData.items)) return [];
+  return rssData.items.map((item: RssItem) => {
+    const id = item.guid ? item.guid.replace(/^t1_/, "") : "";
+    const author = item.author ? item.author.replace(/^\/?u\//, "") : "";
+    const body = htmlToPlaintext(item.description || item.content || "");
+    const createdUtc = item.pubDate ? Math.floor(new Date(item.pubDate).getTime() / 1000) : Math.floor(Date.now() / 1000);
+
+    return {
+      id,
+      author,
+      body,
+      createdUtc
+    };
+  });
+}
+
 export async function fetchRecentPosts(): Promise<RedditPost[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), appConfig.requestTimeoutMs);
@@ -60,6 +135,21 @@ export async function fetchRecentPosts(): Promise<RedditPost[]> {
     }
 
     return mapRedditListing(await response.json());
+  } catch (error) {
+    console.warn("Primary Reddit fetch failed, trying RSS fallback...", error);
+    try {
+      const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=https://www.reddit.com/r/${subreddit}/new.rss`;
+      const fallbackResponse = await fetch(rssUrl, {
+        signal: controller.signal
+      });
+      if (fallbackResponse.ok) {
+        const data = await fallbackResponse.json();
+        return mapRssPosts(data);
+      }
+    } catch (fallbackError) {
+      console.error("RSS fallback also failed:", fallbackError);
+    }
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
@@ -138,6 +228,21 @@ export async function fetchPostComments(postId: string): Promise<RedditComment[]
 
     const data = await response.json();
     return mapRedditComments(data);
+  } catch (error) {
+    console.warn("Primary Reddit comments fetch failed, trying RSS fallback...", error);
+    try {
+      const rssUrl = `https://api.rss2json.com/v1/api.json?rss_url=https://www.reddit.com/comments/${encodeURIComponent(postId)}/.rss`;
+      const fallbackResponse = await fetch(rssUrl, {
+        signal: controller.signal
+      });
+      if (fallbackResponse.ok) {
+        const data = await fallbackResponse.json();
+        return mapRssComments(data);
+      }
+    } catch (fallbackError) {
+      console.error("RSS comments fallback also failed:", fallbackError);
+    }
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
