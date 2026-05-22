@@ -143,6 +143,18 @@ describe("reddit post selection", () => {
 
     expect(post?.id).toBe("new");
   });
+
+  it("skips boilerplate posts and selects the next newest valid post", () => {
+    const post = findLatestDailyWorkoutPost(
+      [
+        { id: "old", title: "Daily Workout - 5/21/2026", selftext: "Tread Block\n1 min AO", createdUtc: 100 },
+        { id: "boilerplate", title: "Daily Workout - 5/22/2026", selftext: "Use this post to discuss the OTF workout template", createdUtc: 200 }
+      ],
+      "Daily Workout"
+    );
+
+    expect(post?.id).toBe("old");
+  });
 });
 
 describe("workout service", () => {
@@ -175,7 +187,8 @@ describe("workout service", () => {
           selftext: "Tread Block\n2 min push\n\nFloor Block\n10 squats",
           createdUtc: 1779400000
         }
-      ]
+      ],
+      fetchComments: async () => []
     });
 
     const result = await service.refreshWorkout();
@@ -199,7 +212,8 @@ describe("workout service", () => {
           selftext: "Tread Block\n2 min push\n\nFloor Block\n10 squats",
           createdUtc: 1779400000
         }
-      ]
+      ],
+      fetchComments: async () => []
     });
 
     const result = await service.refreshWorkout();
@@ -221,7 +235,8 @@ describe("workout service", () => {
           selftext: "Tread Block\n2 min push\n\nFloor Block\n10 squats",
           createdUtc: 1779400000
         }
-      ]
+      ],
+      fetchComments: async () => []
     });
 
     const result = await service.refreshWorkout();
@@ -236,7 +251,8 @@ describe("workout service", () => {
     store.saveCurrentWorkout({ ...sampleWorkout, rawText: "Keep me" });
     const service = createWorkoutService({
       store,
-      fetchPosts: async () => [{ id: "x", title: "Lift 50", selftext: "Nope", createdUtc: 1 }]
+      fetchPosts: async () => [{ id: "x", title: "Lift 50", selftext: "Nope", createdUtc: 1 }],
+      fetchComments: async () => []
     });
 
     const result = await service.refreshWorkout();
@@ -253,7 +269,8 @@ describe("workout service", () => {
       store,
       fetchPosts: async () => {
         throw new Error("network down");
-      }
+      },
+      fetchComments: async () => []
     });
 
     const result = await service.refreshWorkout();
@@ -261,6 +278,133 @@ describe("workout service", () => {
     expect(result.ok).toBe(false);
     expect(result.workout.rawText).toBe("Still here");
     expect(result.workout.lastRefreshStatus).toBe("failed");
+  });
+
+  it("uses workout comment from target author when post is boilerplate", async () => {
+    store = createTestStore();
+    const service = createWorkoutService({
+      store,
+      fetchPosts: async () => [
+        {
+          id: "today123",
+          title: "Daily Workout and General Chat for Friday 05/22/26",
+          selftext: "Use this post to discuss the OTF workout template",
+          createdUtc: 1779400000
+        }
+      ],
+      fetchComments: async (postId) => {
+        if (postId === "today123") {
+          return [
+            {
+              id: "comm1",
+              author: "someuser",
+              body: "I love this template",
+              createdUtc: 1779400100
+            },
+            {
+              id: "comm2",
+              author: "dc031114",
+              body: "Tread Block\n30 sec AO\n\nFloor Block\nGoblet squats",
+              createdUtc: 1779400200
+            }
+          ];
+        }
+        return [];
+      }
+    });
+
+    const result = await service.refreshWorkout();
+
+    expect(result.ok).toBe(true);
+    expect(result.workout.redditId).toBe("today123");
+    expect(result.workout.rawText).toContain("Tread Block");
+    expect(result.workout.rawText).toContain("Goblet squats");
+    expect(result.workout.sections.length).toBe(2);
+  });
+
+  it("skips boilerplate post without target comment and scans older posts", async () => {
+    store = createTestStore();
+    const service = createWorkoutService({
+      store,
+      fetchPosts: async () => [
+        {
+          id: "yesterday123",
+          title: "Daily Workout - 5/21/2026",
+          selftext: "Old Tread Block\n1 min push",
+          createdUtc: 1779300000
+        },
+        {
+          id: "today123",
+          title: "Daily Workout - 5/22/2026",
+          selftext: "Use this post to discuss the OTF workout template",
+          createdUtc: 1779400000
+        }
+      ],
+      fetchComments: async (postId) => {
+        if (postId === "today123") {
+          return [
+            {
+              id: "comm1",
+              author: "otheruser",
+              body: "No intel yet!",
+              createdUtc: 1779400100
+            }
+          ];
+        }
+        return [];
+      }
+    });
+    const result = await service.refreshWorkout();
+
+    expect(result.ok).toBe(true);
+    expect(result.workout.redditId).toBe("yesterday123");
+    expect(result.workout.rawText).toContain("Old Tread Block");
+  });
+
+  it("automatically resolves repeat template links to extract structured workout", async () => {
+    store = createTestStore();
+    const service = createWorkoutService({
+      store,
+      fetchPosts: async () => [
+        {
+          id: "today123",
+          title: "Daily Workout and General Chat for Friday 05/22/26",
+          selftext: "Use this post to discuss the OTF workout template",
+          createdUtc: 1779400000
+        }
+      ],
+      fetchComments: async (postId) => {
+        if (postId === "today123") {
+          return [
+            {
+              id: "comm1",
+              author: "dc031114",
+              body: "Repeating endurance template from [7th of May](https://www.reddit.com/r/orangetheory/comments/prev456/daily_workout_and_general_chat_for_thursday_5726/).",
+              createdUtc: 1779400100
+            }
+          ];
+        } else if (postId === "prev456") {
+          return [
+            {
+              id: "commPrev",
+              author: "dc031114",
+              body: "Tread Block 1\n30 sec AO\n\nFloor Block 1\nGoblet squats",
+              createdUtc: 1779300100
+            }
+          ];
+        }
+        return [];
+      }
+    });
+
+    const result = await service.refreshWorkout();
+
+    expect(result.ok).toBe(true);
+    expect(result.workout.redditId).toBe("today123");
+    expect(result.workout.rawText).toContain("Tread Block 1");
+    expect(result.workout.rawText).toContain("Goblet squats");
+    expect(result.workout.parserMode).toBe("structured");
+    expect(result.workout.sections.length).toBe(2);
   });
 });
 

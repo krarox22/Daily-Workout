@@ -29,3 +29,10 @@ export type RedditPost = {
   selftext: string;
   createdUtc: number;
 };
+
+export type RedditComment = {
+  id: string;
+  author: string;
+  body: string;
+  createdUtc: number;
+};

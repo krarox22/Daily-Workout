@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 :root {
-  color: #17120b;
-  background: #fff8ea;
-  font-family: Arial, Helvetica, sans-serif;
+  color: #1e293b;
+  background: #F7F9FC;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
 
 * {
@@ -11,9 +13,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(255, 178, 26, 0.22), transparent 32rem),
-    #fff8ea;
+  background: #F7F9FC;
 }
 
 button {
@@ -22,18 +22,68 @@ button {
 
 .app-shell {
   min-height: 100vh;
-  max-width: 760px;
+  max-width: 960px;
   margin: 0 auto;
-  background: #fffdf7;
-  box-shadow: 0 22px 80px rgba(61, 31, 0, 0.08);
+  background: transparent;
+  box-shadow: none;
 }
 
 .hero {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
   padding: 34px 22px 28px;
-  color: #211500;
+  color: #ffffff;
   background: linear-gradient(135deg, #ffbf2f 0%, #ff8a00 100%);
   border-bottom-left-radius: 30px;
   border-bottom-right-radius: 30px;
+  box-shadow: 0 10px 30px rgba(255, 138, 0, 0.15);
+}
+
+.hero .eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hero-content {
+  flex: 1;
+}
+
+.hero-image-container {
+  width: 220px;
+  height: 300px;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18);
+  border: 5px solid #fff;
+  flex-shrink: 0;
+}
+
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 520px) {
+  .hero {
+    gap: 16px;
+    padding: 24px 18px 24px;
+  }
+
+  .hero-image-container {
+    width: 140px;
+    height: 190px;
+    border-radius: 18px;
+    border-width: 4px;
+  }
+}
+
+@media (max-width: 380px) {
+  .hero-image-container {
+    display: none;
+  }
 }
 
 .eyebrow {
@@ -46,15 +96,16 @@ button {
 
 h1 {
   margin: 0;
-  max-width: 13ch;
+  max-width: none;
   font-size: 2.7rem;
-  line-height: 0.93;
+  line-height: 1.1;
 }
 
 .hero-copy {
   margin: 14px 0 0;
-  max-width: 26rem;
-  font-weight: 800;
+  max-width: 32rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .hero-actions {
@@ -80,6 +131,20 @@ h1 {
   background: #15100a;
 }
 
+.hero .primary-button {
+  color: #ff6b00;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.hero .primary-button:hover {
+  background: #fffaf5;
+}
+
+.hero .status-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .secondary-button {
   padding: 12px 18px;
   color: #15100a;
@@ -92,6 +157,7 @@ h1 {
   padding: 16px 18px;
   color: #fff;
   background: #ff6b00;
+  box-shadow: 0 8px 24px rgba(255, 107, 0, 0.25);
 }
 
 button:disabled {
@@ -115,40 +181,139 @@ button:focus-visible {
 
 .section-list {
   display: grid;
-  gap: 14px;
+  gap: 20px;
 }
 
 .workout-card,
 .complete-card {
-  border: 1px solid rgba(33, 21, 0, 0.08);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 14px 38px rgba(61, 31, 0, 0.08);
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .workout-card {
-  padding: 18px;
+  padding: 24px;
+  background: #FFFFFF;
+}
+
+/* Active & Inactive states */
+.workout-card.inactive {
+  opacity: 0.5;
+  background: #f1f5f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transform: scale(0.985);
+}
+
+.workout-card.active {
+  opacity: 1;
+  background: #FFFFFF;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  transform: scale(1.005);
 }
 
 .workout-card h2 {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.025em;
+}
+
+.workout-line {
+  margin: 8px 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+/* Goals hierarchy */
+.workout-line.goal {
+  color: #64748b;
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.workout-line.round-header {
+  color: #0f172a;
+  font-weight: 800;
   font-size: 1.15rem;
+  margin-top: 14px;
+  margin-bottom: 8px;
 }
 
 .workout-card pre {
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: inherit;
   font-size: 1rem;
-  line-height: 1.55;
+  line-height: 1.6;
+  color: #334155;
+}
+
+/* Divider line between rounds */
+.round-divider {
+  border: 0;
+  border-top: 1px solid #e2e8f0;
+  margin: 20px 0;
+}
+
+/* Pill badges for pace & incline metrics */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 999px;
+  margin: 0 4px;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-ao {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.badge-pw {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.badge-wr {
+  background: #dcfce7;
+  color: #10b981;
+}
+
+.badge-push {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.badge-base {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.badge-incline {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.badge-generic {
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .complete-card {
   padding: 34px 24px;
   text-align: center;
   color: #fff;
-  background: linear-gradient(135deg, #16100a 0%, #ff7a00 100%);
+  background: linear-gradient(135deg, #ffbf2f 0%, #ff8a00 100%);
 }
 
 .complete-kicker {

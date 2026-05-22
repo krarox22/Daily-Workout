@@ -1,5 +1,6 @@
 import Database from "better-sqlite3";
 import { appConfig } from "./config";
+import { isBoilerplate } from "./parser";
 import { sampleWorkout } from "./sample-workout";
 import type { Workout, WorkoutSection } from "./types";
 
@@ -43,7 +44,14 @@ export function createWorkoutStore(dbPath = appConfig.sqlitePath) {
   return {
     getCurrentWorkout(): Workout {
       const row = db.prepare("SELECT * FROM current_workout WHERE id = ?").get("current") as WorkoutRow | undefined;
-      return row ? rowToWorkout(row) : sampleWorkout;
+      if (row) {
+        const workout = rowToWorkout(row);
+        if (isBoilerplate(workout.rawText)) {
+          return sampleWorkout;
+        }
+        return workout;
+      }
+      return sampleWorkout;
     },
 
     saveCurrentWorkout(workout: Workout): Workout {

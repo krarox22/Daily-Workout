@@ -76,16 +76,21 @@ export function WorkoutApp({ initialWorkout }: Props) {
   return (
     <main className="app-shell">
       <section className="hero">
-        <p className="eyebrow">Orangetheory</p>
-        <h1>{title}</h1>
-        <p className="hero-copy">Clean daily workout. Just the essentials.</p>
-        <div className="hero-actions">
-          <button className="primary-button" disabled={isBusy} onClick={refreshWorkout}>
-            {isRefreshing ? "Refreshing..." : "Refresh"}
-          </button>
-          <span className="status-text" aria-live="polite">
-            {statusText}
-          </span>
+        <div className="hero-content">
+          <p className="eyebrow">Orangetheory</p>
+          <h1>{title}</h1>
+          <p className="hero-copy">Clean daily workout. Just the essentials.</p>
+          <div className="hero-actions">
+            <button className="primary-button" disabled={isBusy} onClick={refreshWorkout}>
+              {isRefreshing ? "Refreshing..." : "Refresh"}
+            </button>
+            <span className="status-text" aria-live="polite">
+              {statusText}
+            </span>
+          </div>
+        </div>
+        <div className="hero-image-container">
+          <img src="/strong-mind.png" alt="Strong Body Strong Mind" className="hero-image" />
         </div>
       </section>
 

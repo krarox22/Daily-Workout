@@ -6,10 +6,19 @@ type ParseInput = {
 };
 
 const SECTION_HEADING_RE =
-  /^(?:(?:tread|row|floor|lift|finisher)(?:\s+(?:block(?:\s+\d+)?|\d+))?|notes|coach notes)$/i;
+  /^(?:(?:tread|row|floor|lift|finisher)(?:\s+(?:block(?:\s+\d+)?|\d+))?|notes|coach notes)(?:\s*[-:—]|$)/i;
 
 export function isDailyWorkoutTitle(title: string, keyword: string): boolean {
   return title.toLowerCase().includes(keyword.toLowerCase());
+}
+
+export function isBoilerplate(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes("discuss the otf workout template") ||
+    normalized.includes("asking for intel is not permitted") ||
+    normalized.includes("automatically generated")
+  );
 }
 
 export function extractDisplayDate(title: string): string | null {
@@ -41,6 +50,8 @@ export function cleanRedditText(text: string): string {
   return text
     .replace(/&nbsp;/gi, " ")
     .replace(/\r\n/g, "\n")
+    .replace(/&gt;!|>!|!&lt;|!<|!&gt;/g, "")
+    .replace(/\\+$/gm, "")
     .replace(/\*\*(.*?)\*\*/g, "$1")
     .replace(/^\s*[-*+]\s+/gm, "")
     .replace(/^\s*>\s?/gm, "")
@@ -81,7 +92,7 @@ function parseSections(rawText: string): WorkoutSection[] {
     }
 
     if (!current) {
-      return [];
+      continue;
     }
 
     current.body += `${line}\n`;
