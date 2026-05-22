@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { Workout } from "@/lib/types";
 
 type Props = {
@@ -7,6 +8,7 @@ type Props = {
 };
 
 export function WorkoutContent({ workout }: Props) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   function parseWorkoutLine(line: string) {
     const cleanedLine = line.replace(/&amp;/g, "&");
@@ -95,10 +97,18 @@ export function WorkoutContent({ workout }: Props) {
     return (
       <div className="section-list">
         {workout.sections.map((section, index) => {
+          const isSelected = activeIndex === index;
+          const isAnySelected = activeIndex !== null;
+          const cardClass = `workout-card ${
+            isSelected ? "active" : isAnySelected ? "inactive" : "active"
+          }`;
+
           return (
             <section
-              className="workout-card active"
+              className={cardClass}
               key={`${section.heading}-${index}`}
+              onClick={() => setActiveIndex(isSelected ? null : index)}
+              style={{ cursor: "pointer" }}
             >
               <h2>{section.heading}</h2>
               {renderBody(section.body)}

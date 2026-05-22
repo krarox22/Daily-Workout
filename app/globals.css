@@ -199,10 +199,15 @@ button:focus-visible {
 
 /* Active & Inactive states */
 .workout-card.inactive {
-  opacity: 0.5;
-  background: #f1f5f9;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  opacity: 0.55;
+  background: #FFFFFF;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
   transform: scale(0.985);
+}
+
+.workout-card.inactive:hover {
+  opacity: 0.85;
+  transform: scale(0.995);
 }
 
 .workout-card.active {
