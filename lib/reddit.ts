@@ -36,6 +36,10 @@ function htmlToPlaintext(html: string): string {
   if (!html) return "";
   let text = html;
 
+  // Split inline bullet/star separators onto newlines for correct parsing
+  text = text.replace(/\s+\*\s+/g, "\n* ");
+  text = text.replace(/\s+•\s+/g, "\n* ");
+
   text = text.replace(/<br\s*\/?>/gi, "\n");
   text = text.replace(/<\/p>/gi, "\n");
   text = text.replace(/<\/h[1-6]>/gi, "\n");
