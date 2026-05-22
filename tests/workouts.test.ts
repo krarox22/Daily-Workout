@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createWorkoutStore } from "@/lib/db";
 import { findLatestDailyWorkoutPost } from "@/lib/reddit";
 import { sampleWorkout } from "@/lib/sample-workout";
+import { createWorkoutService } from "@/lib/workouts";
 
 type TestWorkoutStore = ReturnType<typeof createWorkoutStore> & {
   close: () => void;
@@ -141,6 +142,64 @@ describe("reddit post selection", () => {
     );
 
     expect(post?.id).toBe("new");
+  });
+});
+
+describe("workout service", () => {
+  it("refreshes from a matching Reddit post and resets completion", async () => {
+    store = createTestStore();
+    store.saveCurrentWorkout({ ...sampleWorkout, completed: true });
+    const service = createWorkoutService({
+      store,
+      fetchPosts: async () => [
+        {
+          id: "abc123",
+          title: "Daily Workout and General Chat for Friday 05/22/26",
+          selftext: "Tread Block\n2 min push\n\nFloor Block\n10 squats",
+          createdUtc: 1779400000
+        }
+      ]
+    });
+
+    const result = await service.refreshWorkout();
+
+    expect(result.ok).toBe(true);
+    expect(result.workout.redditId).toBe("abc123");
+    expect(result.workout.completed).toBe(false);
+    expect(result.workout.lastRefreshStatus).toBe("success");
+    expect(result.workout.displayDate).toBe("May 22");
+  });
+
+  it("preserves saved workout when no matching post exists", async () => {
+    store = createTestStore();
+    store.saveCurrentWorkout({ ...sampleWorkout, rawText: "Keep me" });
+    const service = createWorkoutService({
+      store,
+      fetchPosts: async () => [{ id: "x", title: "Lift 50", selftext: "Nope", createdUtc: 1 }]
+    });
+
+    const result = await service.refreshWorkout();
+
+    expect(result.ok).toBe(false);
+    expect(result.workout.rawText).toBe("Keep me");
+    expect(result.workout.lastRefreshStatus).toBe("failed");
+  });
+
+  it("preserves saved workout when Reddit fetch fails", async () => {
+    store = createTestStore();
+    store.saveCurrentWorkout({ ...sampleWorkout, rawText: "Still here" });
+    const service = createWorkoutService({
+      store,
+      fetchPosts: async () => {
+        throw new Error("network down");
+      }
+    });
+
+    const result = await service.refreshWorkout();
+
+    expect(result.ok).toBe(false);
+    expect(result.workout.rawText).toBe("Still here");
+    expect(result.workout.lastRefreshStatus).toBe("failed");
   });
 });
 
