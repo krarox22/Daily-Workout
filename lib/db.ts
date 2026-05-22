@@ -30,13 +30,13 @@ export function createWorkoutStore(dbPath = appConfig.sqlitePath) {
       display_date TEXT,
       raw_text TEXT NOT NULL,
       sections_json TEXT NOT NULL,
-      parser_mode TEXT NOT NULL,
+      parser_mode TEXT NOT NULL CHECK (parser_mode IN ('structured', 'raw')),
       reddit_id TEXT,
       reddit_title TEXT,
       reddit_created_at TEXT,
       fetched_at TEXT,
-      last_refresh_status TEXT NOT NULL,
-      completed INTEGER NOT NULL
+      last_refresh_status TEXT NOT NULL CHECK (last_refresh_status IN ('idle', 'success', 'failed')),
+      completed INTEGER NOT NULL CHECK (completed IN (0, 1))
     )
   `);
 
@@ -72,6 +72,7 @@ export function createWorkoutStore(dbPath = appConfig.sqlitePath) {
           completed = excluded.completed
       `).run({
         ...workout,
+        id: "current",
         sectionsJson: JSON.stringify(workout.sections),
         completed: workout.completed ? 1 : 0
       });
@@ -87,6 +88,10 @@ export function createWorkoutStore(dbPath = appConfig.sqlitePath) {
     setCompleted(completed: boolean): Workout {
       const current = this.getCurrentWorkout();
       return this.saveCurrentWorkout({ ...current, completed });
+    },
+
+    close(): void {
+      db.close();
     }
   };
 }
