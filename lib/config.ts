@@ -16,5 +16,5 @@ export const appConfig = {
   targetCommentAuthor: process.env.REDDIT_TARGET_COMMENT_AUTHOR ?? "dc031114",
   maxPostsToScan: readPositiveIntegerEnv(process.env.REDDIT_MAX_POSTS_TO_SCAN, 25),
   requestTimeoutMs: readPositiveIntegerEnv(process.env.REDDIT_REQUEST_TIMEOUT_MS, 8000),
-  sqlitePath: process.env.SQLITE_PATH ?? "daily-workout.db"
+  sqlitePath: process.env.SQLITE_PATH ?? (process.env.VERCEL ? "/tmp/daily-workout.db" : "daily-workout.db")
 };
