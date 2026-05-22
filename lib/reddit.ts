@@ -4,18 +4,55 @@ import type { RedditPost, RedditComment } from "./types";
 
 type JsonRecord = Record<string, unknown>;
 
+const USER_AGENT = "web:daily-workout-viewer:v1.0.0 (by /u/krarox22)";
+
+async function getRedditAccessToken(): Promise<string | null> {
+  const clientId = process.env.REDDIT_CLIENT_ID;
+  const clientSecret = process.env.REDDIT_CLIENT_SECRET;
+  if (!clientId || !clientSecret) return null;
+
+  try {
+    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+    const response = await fetch("https://www.reddit.com/api/v1/access_token", {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": USER_AGENT
+      },
+      body: "grant_type=client_credentials",
+      cache: "no-store"
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchRecentPosts(): Promise<RedditPost[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), appConfig.requestTimeoutMs);
   const subreddit = encodeURIComponent(appConfig.subreddit);
-  const url = `https://www.reddit.com/r/${subreddit}/new.json?limit=${appConfig.maxPostsToScan}`;
 
   try {
+    const token = await getRedditAccessToken();
+    const url = token
+      ? `https://oauth.reddit.com/r/${subreddit}/new?limit=${appConfig.maxPostsToScan}`
+      : `https://www.reddit.com/r/${subreddit}/new.json?limit=${appConfig.maxPostsToScan}`;
+
+    const headers: HeadersInit = {
+      "User-Agent": USER_AGENT
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        "User-Agent": "daily-workout-app/0.1"
-      }
+      headers
     });
 
     if (!response.ok) {
@@ -76,14 +113,23 @@ function mapRedditChild(child: unknown): RedditPost | null {
 export async function fetchPostComments(postId: string): Promise<RedditComment[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), appConfig.requestTimeoutMs);
-  const url = `https://www.reddit.com/comments/${encodeURIComponent(postId)}.json`;
 
   try {
+    const token = await getRedditAccessToken();
+    const url = token
+      ? `https://oauth.reddit.com/comments/${encodeURIComponent(postId)}`
+      : `https://www.reddit.com/comments/${encodeURIComponent(postId)}.json`;
+
+    const headers: HeadersInit = {
+      "User-Agent": USER_AGENT
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        "User-Agent": "daily-workout-app/0.1"
-      }
+      headers
     });
 
     if (!response.ok) {
