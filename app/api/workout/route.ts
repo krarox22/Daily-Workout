@@ -6,5 +6,9 @@ export const runtime = "nodejs";
 export async function GET() {
   const service = createWorkoutService();
 
-  return NextResponse.json({ workout: service.getCurrentWorkout() });
+  try {
+    return NextResponse.json({ workout: service.getCurrentWorkout() });
+  } finally {
+    service.close();
+  }
 }

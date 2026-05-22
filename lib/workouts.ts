@@ -28,6 +28,10 @@ export function createWorkoutService(deps: ServiceDeps = {}) {
       return store.setCompleted(completed);
     },
 
+    close(): void {
+      store.close();
+    },
+
     async refreshWorkout(): Promise<RefreshResult> {
       try {
         const posts = await fetchPosts();

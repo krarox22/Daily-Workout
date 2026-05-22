@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import Database from "better-sqlite3";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createWorkoutStore } from "@/lib/db";
 import { findLatestDailyWorkoutPost } from "@/lib/reddit";
 import { sampleWorkout } from "@/lib/sample-workout";
@@ -146,6 +146,23 @@ describe("reddit post selection", () => {
 });
 
 describe("workout service", () => {
+  it("closes the backing store", () => {
+    const close = vi.fn();
+    const fakeStore = {
+      getCurrentWorkout: vi.fn(),
+      saveCurrentWorkout: vi.fn(),
+      setRefreshStatus: vi.fn(),
+      setCompleted: vi.fn(),
+      close
+    } satisfies TestWorkoutStore;
+
+    const service = createWorkoutService({ store: fakeStore });
+
+    service.close();
+
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it("refreshes from a matching Reddit post and resets completion", async () => {
     store = createTestStore();
     store.saveCurrentWorkout({ ...sampleWorkout, completed: true });
