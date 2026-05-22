@@ -4,6 +4,7 @@ import { join } from "node:path";
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createWorkoutStore } from "@/lib/db";
+import { findLatestDailyWorkoutPost } from "@/lib/reddit";
 import { sampleWorkout } from "@/lib/sample-workout";
 
 type TestWorkoutStore = ReturnType<typeof createWorkoutStore> & {
@@ -125,6 +126,21 @@ describe("workout store", () => {
     store = createTestStore();
 
     expect(store.getCurrentWorkout()).toEqual(sampleWorkout);
+  });
+});
+
+describe("reddit post selection", () => {
+  it("selects the newest title containing Daily Workout", () => {
+    const post = findLatestDailyWorkoutPost(
+      [
+        { id: "old", title: "Daily Workout - 5/21/2026", selftext: "Old", createdUtc: 100 },
+        { id: "skip", title: "Lift 50 discussion", selftext: "Skip", createdUtc: 300 },
+        { id: "new", title: "Daily Workout - 5/22/2026", selftext: "New", createdUtc: 200 }
+      ],
+      "Daily Workout"
+    );
+
+    expect(post?.id).toBe("new");
   });
 });
 
